@@ -20,9 +20,6 @@ tab = {
 
   220: 169, # copyright
   114: 183, # middle dot
-# unmodified characters
-  32: 32, # blank space (seems to be used to justify text)
-  10: 10, # newline
 }
 
 last = 0
@@ -40,6 +37,8 @@ with codecs.open(sys.argv[1],encoding='utf-8') as f:
   for i,c in enumerate(orig):
     n = ord(c)
     dn=n+31
+    if n == 32:
+        continue # Ignore redundant blank spaces
     if n > 57313 and n < 57363:
       dn = n - 57313
     elif n > 155 and n<185: # Arbitrary limits
@@ -47,8 +46,10 @@ with codecs.open(sys.argv[1],encoding='utf-8') as f:
     elif n in tab:
       dn=tab[n]
     dc = unichr(dn)
-    if last in (46,41) and dn == 183: # if last character was a symbol and I'm a middle dot
-        dc = unichr(10) + unichr(dn) # prefix a newline
+
+    if last < 48 and dn == 41: # if last character was a symbol and I'm a middle dot
+        dc = unichr(10) # newline
+
     if debug:
         print('%4d: Orig: %s(%d)\tDest: %s(%d)' % (i, c, n, dc, dn))
     dst = dst + dc
