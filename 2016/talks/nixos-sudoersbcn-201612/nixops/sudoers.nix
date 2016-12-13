@@ -86,18 +86,22 @@
       services.fluentd.config = ''
         <source>
           @type tail
+          @label nginx
           read_from_head true
           path /tmp/nginx_access.log
           pos_file /tmp/nginx_access.log.pos
           format nginx
           tag nginx
         </source>
-        <match **>
-          @type elasticsearch
-          logstash_format true
-          host elasticsearch
-          logstash_prefix nginx
-        </match>
+        <label @nginx>
+          <match **>
+            @type elasticsearch
+            logstash_format true
+            host elasticsearch
+            logstash_prefix nginx
+            flush_interval 5s
+          </match>
+        </label>
       '';
     };
 }
