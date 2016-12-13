@@ -4,51 +4,91 @@
 #+LANGUAGE: en
 
 * The Nix package manager
-- Packages are built by functions that  have no side effects
-- The results are stored in =/nix/store= in a path composed by a hash and a package name
-#+BEGIN_SRC 
+- A package manager for Linux and UNIX.
+  - Supported for Linux and OS X. Highly portable.
+- Packages are built by functions that  have no side effects.
+- The results are stored in =/nix/store= in a path composed by a hash
+  and a package name.
+
+#+BEGIN_EXAMPLE
 /nix/store/f14wv5if337jf0l5169pyia5wdcdwrz8-fortune-mod-1.99.1
-#+END_SRC
+#+END_EXAMPLE
+
 - The hash is computed from the declaration of the package and *all
-  it's dependencies*
+  its dependencies*.
 
-* Nix: package components
-- Every package in the store has a [[/nix/store/g9k1bbydr89syn0qnj420w2g35h2knx4-fortune-mod-1.99.1.drv][derivation]].
-- This derivation 
-#+BEGIN_SRC sh
-gaia:nixos-sudoersbcn-201612$ ls -ld /nix/store/*pypy*
--r--r--r-- 1 root root 17224804 Jan  1  1970 /nix/store/bv6hzv0xrmy493rbv5ns8qg40smvic6g-release-pypy2.7-v5.4.1.tar.bz2
--r--r--r-- 1 root root    12538 Jan  1  1970 /nix/store/gba5sz542pfv5nlambxlbp4zz2q80nh3-pypy-5.4.1.drv
--rw------- 1 root root        0 Dec 13 12:47 /nix/store/h4mimrcmwlywpasiyhz8vg68acch5ir4-pypy-5.4.1.lock
--r--r--r-- 1 root root     2335 Jan  1  1970 /nix/store/mr2r89kl9p48cv5msw4sa7rjqyxg96h3-release-pypy2.7-v5.4.1.tar.bz2.drv
+* Nix: store
+- Every package in the store has a [[file:fortune.drv][derivation]].
+- This derivation is the result of evaluating the [[file:fortune.nix][Nix expression]] that
+  defines the package and all its inputs.
+- Locks allow multiple builds to be done in parallel. If a build
+  starts for a package that is already being built it blocks until the
+  first build process finishes.
 
-#+END_SRC
+#+BEGIN_EXAMPLE
+gaia:nixos-sudoersbcn-201612$ ls -1d /nix/store/*pypy*
+/nix/store/gba5sz542pfv5nlambxlbp4zz2q80nh3-pypy-5.4.1.drv
+/nix/store/h4mimrcmwlywpasiyhz8vg68acch5ir4-pypy-5.4.1.lock
+/nix/store/mr2r89kl9p48cv5msw4sa7rjqyxg96h3-release-pypy2.7-v5.4.1.tar.bz2.drv
+#+END_EXAMPLE
 
+* Nix: environments and profiles
+- Every user has a =~/.nix-profile= symlink to
+  =/nix/var/nix/profiles/per-user/username/profile=.
+- That path is a symlink to the *_current_* user profile.
+- And the current user profile is a symlink to a userenvironment in
+  the store:
 
-* Nix: linking
-- Binaries are explicitly linked to libraries in the nix store
-#+BEGIN_SRC sh :results output
-ldd /nix/store/f14wv5if337jf0l5169pyia5wdcdwrz8-fortune-mod-1.99.1/bin/fortune
-#+END_SRC
+#+BEGIN_EXAMPLE
+gaia:~$ readlink ~/.nix-profile
+/nix/var/nix/profiles/per-user/itorres/profile
+gaia:~$ readlink /nix/var/nix/profiles/per-user/itorres/profile
+profile-8-link
+gaia:~$ readlink /nix/var/nix/profiles/per-user/itorres/profile-8-link
+/nix/store/c2dly9lm8shh8rhb7yz3ibrg3yxsn06n-user-environment
+#+END_EXAMPLE
 
-#+RESULTS:
-: 	linux-vdso.so.1 (0x00007ffd1d7b9000)
-: 	librecode.so.0 => /nix/store/zj4qgi30qsqvd81bbfj74kp54m7qqqpl-recode-3.7-2fd838565/lib/librecode.so.0 (0x00007f330f8f9000)
-: 	libc.so.6 => /nix/store/jm1n87rp8vr90j9ahcrfzr57nc2r8vgf-glibc-2.24/lib/libc.so.6 (0x00007f330f55b000)
-: 	/nix/store/jm1n87rp8vr90j9ahcrfzr57nc2r8vgf-glibc-2.24/lib/ld-linux-x86-64.so.2 (0x00007f330fc21000)
-- Due to this whhen using foreign (non-NixOS) binaries we need to patch their elf headers
-#+BEGIN_SRC 
-patchelf --set-interpreter /nix/store/jm1n87rp8vr90j9ahcrfzr57nc2r8vgf-glibc-2.24/lib/ld-linux-x86-64.so.2 vendetta
-#+END_SRC
-- In some cases like [[/nix/store/k60i8a7plawg6x7sl5ajyc9gp7fgadpr-firefox-50.0.2/lib/firefox-50.0.2/firefox.yvBTAf][firefox]] shims are created to set environment variables
+* Nix: binary linking
+- Binaries are explicitly linked to libraries in the Nix store.
 
+#+BEGIN_EXAMPLE
+gaia:~$ ldd /nix/store/f14wv5if337jf0l5169pyia5wdcdwrz8-fortune-mod-1.99.1/bin/fortune
+	linux-vdso.so.1 (0x00007ffd44988000)
+	librecode.so.0 => /nix/store/zj4qgi30qsqvd81bbfj74kp54m7qqqpl-recode-3.7-2fd838565/lib/librecode.so.0 (0x00007f85267eb000)
+	libc.so.6 => /nix/store/jm1n87rp8vr90j9ahcrfzr57nc2r8vgf-glibc-2.24/lib/libc.so.6 (0x00007f852644d000)
+	/nix/store/jm1n87rp8vr90j9ahcrfzr57nc2r8vgf-glibc-2.24/lib/ld-linux-x86-64.so.2 (0x00007f8526b13000)
+#+END_EXAMPLE
+
+- Due to this when using foreign (non-NixOS) binaries we need patch
+  their ELF headers.
+
+#+BEGIN_EXAMPLE
+gaia:~$ patchelf --set-interpreter /nix/store/jm1n87rp8vr90j9ahcrfzr57nc2r8vgf-glibc-2.24/lib/ld-linux-x86-64.so.2 vendetta
+#+END_EXAMPLE
+
+* Nix: shims and interpreters
+- In some cases like [[/nix/store/k60i8a7plawg6x7sl5ajyc9gp7fgadpr-firefox-50.0.2/lib/firefox-50.0.2/firefox.yvBTAf][firefox]] shims are created to set environment
+  variables.
+
+#+BEGIN_EXAMPLE
+#! /nix/store/28wl3f34vfjpw0y5809bgr6382wqdscf-bash-4.3-p48/bin/bash -e
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH${LD_LIBRARY_PATH:+:}/nix/store/n953cjiv17qslgq84hg7jzzgf2vdsxka-ffmpeg-3.1.4/lib:/nix/store/n953cjiv17qslgq84hg7jzzgf2vdsxka-ffmpeg-3.1.4/lib64
+export GTK_PATH=$GTK_PATH${GTK_PATH:+:}/nix/store/b6wk5c3x2pa07wzyqjcawwxbl4jz8bgj-libcanberra-0.30/lib/gtk-2.0/
+export MOZ_OBJDIR="/nix/store/xm06p32nvmsda4ddy9whsfb7dp6wgpzv-firefox-unwrapped-50.0.2/lib/firefox-50.0.2"
+exec /nix/store/xm06p32nvmsda4ddy9whsfb7dp6wgpzv-firefox-unwrapped-50.0.2/bin/firefox "${extraFlagsArray[@]}" "$@"
+#+END_EXAMPLE
 
 * Nix: channels
- - A channel is a tag of the nixpkgs tree
- - Huge probabilities of an existing binary build
+- What in other package systems are repositories.
+- A channel is a snapshot of a Nix packages tree.
+- The =nixos-*= and =nixpkgs-*= channels are build by Hydra, the
+  continuous delivery daemon of the project.
+  - Huge probabilities of an existing binary build.
+- Allows us to freeze our system in a point in time.
 
-* Nix: nix-env
-   - Install and remove packages
+* Nix: nix-env(1)
+- Manage the environment
+
 #+BEGIN_SRC sh :results output
   nix-env -q | tail -2
 #+END_SRC
@@ -57,7 +97,9 @@ patchelf --set-interpreter /nix/store/jm1n87rp8vr90j9ahcrfzr57nc2r8vgf-glibc-2.2
 : comical-0.8
 : dropbox-14.4.19
 : i7z-0.27.2
-   - Supports rollbacks and generations
+
+- Supports rollbacks and generations
+
 #+BEGIN_SRC sh :results output
   nix-env --list-generations | tail -2
 #+END_SRC
@@ -66,92 +108,85 @@ patchelf --set-interpreter /nix/store/jm1n87rp8vr90j9ahcrfzr57nc2r8vgf-glibc-2.2
 :    7   2016-12-08 04:21:45   
 :    8   2016-12-13 02:33:46   (current)
    
-* Nix: nix-shell
-  - Get into a shell with a modified environment defined by a nix expression.
-   - Virtualenv on steroids.
-  - Can be used as a #! intepreter
-   - Dependency aware scripts!
+* Nix: nix-shell(1)
+- Get into a shell with a modified environment defined by a nix
+  expression.
+  - Virtualenv on steroids.
+- Can be used as a #! intepreter
+  - Dependency aware scripts!
+
 #+BEGIN_SRC sh :results output
-for py in shebang/*.py; do echo "# $py"; $py 2>&1; done
+for sh in shebang/{test-bash,test-bash-pure}.sh; do echo "$sh: "; $sh 2>&1; echo ; done
+for py in shebang/{testpy,test2,test3,test2-old}.py; do echo "$py: "; $py 2>&1; echo; done
 #+END_SRC
 
-#+RESULTS:
-#+begin_example
-# shebang/test2-old.py
-#! /usr/bin/env nix-shell
-#! nix-shell -i python2 -p python27 python27Packages.requests2
-#! nix-shell -I nixpkgs=https://github.com/NixOS/nixpkgs-channels/archive/nixos-14.12.tar.gz
-import test
-# shebang/test2.py
-#! /usr/bin/env nix-shell
-#! nix-shell -i python2 -p python27 python27Packages.requests2
-import test
-# shebang/test3.py
-#! /usr/bin/env nix-shell
-#! nix-shell -i python3.5 -p python35 python35Packages.requests2
-import test
-# shebang/test.py
-#!/usr/bin/env python
-import sys
-import requests
-print (sys.version)
-# shebang/testpy.py
-#! /usr/bin/env nix-shell
-#! nix-shell -i pypy -p pypy pythonPackages.requests2
-import test
-#+end_example
+- Get into the build environment of a package
 
-* Nix: nix-repl
-- Useful to practice the Nix language and to inspect the state of the 
-#+BEGIN_SRC 
-gaia:~ nix-repl 
+#+BEGIN_SRC sh
+nix-shell '<nixos>' -A pypy --pure
+#+END_SRC
+
+
+* Nix: nix-repl(1)
+- Useful to practice the Nix language and to inspect the state of the
+  system.
+
+#+BEGIN_EXAMPLE
+gaia:~ nix-repl
 Welcome to Nix version 1.11.4. Type :? for help.
 
 nix-repl> :l <nixpkgs>
 Added 6642 variables.
 
-nix-repl> nix-tour.meta.description 
+nix-repl> nix-tour.meta.description
 "'the tour of nix' from nixcloud.io/tour as offline version"
-#+END_SRC
 
-* Nix: store model bonuses
-- The Nix store acts as an artifact store
- - No more NPM mayhem
-- It can be shared among servers to be used as a binary cache
+nix-repl> :l <nixpkgs/nixos>
+Added 6 variables.
+
+nix-repl> config.networking.hostName
+"gaia"
+
+nix-repl> config.users.users.itorres.description
+"Ignacio Torres Masdeu"
+
+nix-repl> config.users.users.itorres.home
+"/home/itorres"
+#+END_EXAMPLE
+
+* Nix: store
+** Bonus
+- The Nix store acts as an artifact store.
+ - No more NPM mayhem.
+- It can be shared among servers to be used as a binary cache.
+- As objects are realized to symlinks to other objects we get
+  generations and rollbacks for free.
+
+** Gotcha
+- The store is public. Don't store secrets or sensitive data in the
+  store.
+
 * NixOS
-- Apply the same model to the system environment
-- Every +package+ *object* in the store has a [[/nix/store/24d443bwwd7nm68nav01d7wlm891mcgn-etc.drv][derivation]]
-- Generate immutable, reproducible system configuration
-- Many entries in =/etc= are a symlink forest to the Nix store
+- Apply the same model of Nix to the system environment.
+  [[/etc/nixos/configuration.nix][/etc/nixos/configuration.nix]]
+- Every +package+ *object* in the store has a [[/nix/store/24d443bwwd7nm68nav01d7wlm891mcgn-etc.drv][derivation]].
+- Generate immutable, declarative, reproducible system configurations.
+- Many entries in =/etc= are a symlink forest to the Nix store.
+
 #+BEGIN_SRC sh :results output
 ls -l /etc  | grep /etc/static | tail -4
 ls -l /etc/static
 ls -l /nix/store/fnib5j4z39zkklsk2dxs49qjgjrakkx8-etc/etc | tail -4
-
 #+END_SRC
 
-#+RESULTS:
-: lrwxrwxrwx 1 root root   20 Dec 13 11:20 services -> /etc/static/services
-: lrwxrwxrwx 1 root root   18 Dec 13 11:20 shells -> /etc/static/shells
-: lrwxrwxrwx 1 root root   25 Dec 13 11:20 vconsole.conf -> /etc/static/vconsole.conf
-: lrwxrwxrwx 1 root root   20 Dec 13 11:20 zoneinfo -> /etc/static/zoneinfo
-: lrwxrwxrwx 1 root root 51 Dec 13 11:20 /etc/static -> /nix/store/fnib5j4z39zkklsk2dxs49qjgjrakkx8-etc/etc
-: lrwxrwxrwx 1 root root 57 Jan  1  1970 vconsole.conf -> /nix/store/y84j6fgajjl96qp9c4jsxhxp673w5z3d-vconsole.conf
-: dr-xr-xr-x 3 root root  3 Jan  1  1970 X11
-: dr-xr-xr-x 3 root root  3 Jan  1  1970 zfs
-: lrwxrwxrwx 1 root root 71 Jan  1  1970 zoneinfo -> /nix/store/6ljsbjqp5bshbg3d7v8zb392j8qq674c-tzdata-2016f/share/zoneinfo
-
 * NixOS: install process
-- Spartan, simple and effective CLI install
-- Gnome style
-  1. Partition your system and mount the filesystems in =/mnt= with
-     the expected structure
-  2. Generate a base configuration from that layout
-  3. Tune your configuration to your needs
-  4. ???
-  5. Profit
+- Simple but effective CLI install.
+1. Partition your system and mount the filesystems in =/mnt= with the
+   expected structure.
+2. Generate a base configuration from that layout.
+3. Tune your configuration to your needs and run the install command.
 
-#+BEGIN_SRC
+#+BEGIN_EXAMPLE
 0# nix-env -i emacs && export EDITOR=emacs
 1# mount /dev/sda2 /mnt && mkdir /mnt/boot && mount /dev/sda1 /mnt/boot \
    && mkswap /dev/sda3 && swapon /dev/sda3
@@ -159,29 +194,60 @@ ls -l /nix/store/fnib5j4z39zkklsk2dxs49qjgjrakkx8-etc/etc | tail -4
 3# $EDITOR /mnt/etc/nixos/
 4# nixos-install
 5# reboot
-#+END_SRC
+#+END_EXAMPLE
+
+* NixOS: system configuration
+- Define your system in =/etc/nixos/configuration.nix=.
+- The Nix language is used to define collections of packages and
+  services.
+- Services are configured by modifying their properties.
+- Use ~nixos-option(8)~ to check available options.
+  Web version available on https://nixos.org/nixos/options.html
+
+#+BEGIN_EXAMPLE
+networking.hostName = "gaia";
+networking.hostId = "aa0ab1ce"; # Needed for ZFS
+networking.networkmanager.enable = true;
+  environment.systemPackages = with pkgs; [
+    binutils
+    file
+  ];
+  users.extraUsers.itorres = {
+    isNormalUser = true;
+    extraGroups = [ "wheel" "networkmanager" "libvirtd" "docker" ];
+    description = "Ignacio Torres Masdeu";
+    uid = 1001;
+    hashedPassword = "$6$sCWWAYVlN$aNptMu78NRsIwuJTw8pNkXOrsHdxz3TdFjzWJ1L9RSmsAJaIUK52LYyMSG/vJhLSP0Z6lgSQ64NzRbhCs6pYd0";
+  };
+#+END_EXAMPLE
 
 * NixOps
-** Wash, rinse and repeat
+- Define, deploy and orchestrate a network of NixOS hosts.
+- Same principles as in Nix and NixOS.
+- Does not depend on NixOS as the host, only on Nix.
    [[file:nixops/sudoers.nix::{][sudoers.nix]]
    [[file:nixops/sudoers-virtd.nix::let][sudoers-virtd.nix]]
 
 #+BEGIN_SRC sh :results output
 exec 2>&1
 nixops create -d sudoers nixops/sudoers.nix nixops/sudoers-virtd.nix 
+nixops deploy -d sudoers -j 1
 :
 #+END_SRC
 
-#+BEGIN_SRC sh :results output
-exec 2>&1
-nixops create -d sudoers nixops/sudoers.nix nixops/sudoers-virtd.nix 
-:
+#+BEGIN_SRC sh
+xdg-open http://$(nixops ssh webserver ifconfig | awk '/192.168.122/ {print $2}')/
+xdg-open http://$(nixops ssh kibana ifconfig | awk '/192.168.122/ {print $2}'):5601/
 #+END_SRC
-
 * NixOps: Modify the definition and check the generation number
+[[file:nixops/sudoers.nix::<h1>Hello%20world!</h1][sudoers.nix:index.html]]
 #+BEGIN_SRC sh :results output
 exec 2>&1
+nixops list-generations -d sudoers
 nixops ssh-for-each -p ls /nix/var/nix/profiles/
+nixopos deploy -d sudoers
+nixops ssh-for-each -p ls /nix/var/nix/profiles/
+nixops list-generations -d sudoers
 :
 #+END_SRC
 

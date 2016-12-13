@@ -1,5 +1,6 @@
 {
   network.description = "EFK network";
+  network.enableRollback = true;
 
   elasticsearch =
     { config, pkgs, ... }:
