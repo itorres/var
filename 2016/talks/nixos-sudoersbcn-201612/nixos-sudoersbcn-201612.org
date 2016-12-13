@@ -6,7 +6,7 @@
 * The Nix package manager
 - A package manager for Linux and UNIX.
   - Supported for Linux and OS X. Highly portable.
-- Packages are built by functions that  have no side effects.
+- Packages are built by functions that have no side effects.
 - The results are stored in =/nix/store= in a path composed by a hash
   and a package name.
 
@@ -126,7 +126,6 @@ for py in shebang/{testpy,test2,test3,test2-old}.py; do echo "$py: "; $py 2>&1; 
 nix-shell '<nixos>' -A pypy --pure
 #+END_SRC
 
-
 * Nix: nix-repl(1)
 - Useful to practice the Nix language and to inspect the state of the
   system.
@@ -171,7 +170,7 @@ nix-repl> config.users.users.itorres.home
   [[/etc/nixos/configuration.nix][/etc/nixos/configuration.nix]]
 - Every +package+ *object* in the store has a [[/nix/store/24d443bwwd7nm68nav01d7wlm891mcgn-etc.drv][derivation]].
 - Generate immutable, declarative, reproducible system configurations.
-- Many entries in =/etc= are a symlink forest to the Nix store.
+- Many entries in =/etc= are a symlink to the Nix store.
 
 #+BEGIN_SRC sh :results output
 ls -l /etc  | grep /etc/static | tail -4
@@ -239,6 +238,7 @@ nixops deploy -d sudoers -j 1
 xdg-open http://$(nixops ssh webserver ifconfig | awk '/192.168.122/ {print $2}')/
 xdg-open http://$(nixops ssh kibana ifconfig | awk '/192.168.122/ {print $2}'):5601/
 #+END_SRC
+
 * NixOps: Modify the definition and check the generation number
 [[file:nixops/sudoers.nix::<h1>Hello%20world!</h1][sudoers.nix:index.html]]
 #+BEGIN_SRC sh :results output
@@ -338,7 +338,6 @@ lrwxrwxrwx 1 root root 57 Jan  1  1970 vconsole.conf -> /nix/store/y84j6fgajjl96
 lrwxrwxrwx 1 root root 71 Jan  1  1970 zoneinfo -> /nix/store/6ljsbjqp5bshbg3d7v8zb392j8qq674c-tzdata-2016f/share/zoneinfo
 #+end_example
 
-
 * NixOps: supported platforms
 - Cloud
   - Amazon EC2
@@ -358,7 +357,6 @@ lrwxrwxrwx 1 root root 71 Jan  1  1970 zoneinfo -> /nix/store/6ljsbjqp5bshbg3d7v
   Continuous build system
 - Disnix
   A data aware toolset to deploy  service oriented systems
-
 
 * References and resources
 - Eelco Dolstra’s publications
