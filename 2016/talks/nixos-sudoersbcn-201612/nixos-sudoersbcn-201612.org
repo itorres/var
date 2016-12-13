@@ -113,7 +113,7 @@ gaia:~$ readlink /nix/var/nix/profiles/per-user/itorres/profile-8-link
 - Get into a shell with a modified environment defined by a nix
   expression.
   - Virtualenv on steroids.
-- Can be used as a #! intepreter
+- Can be used as a #! interpreter.
   - Dependency aware scripts!
 
 #+BEGIN_SRC sh :results output
@@ -121,7 +121,8 @@ for sh in shebang/{test-bash,test-bash-pure}.sh; do echo "$sh: "; $sh 2>&1; echo
 for py in shebang/{testpy,test2,test3,test2-old}.py; do echo "$py: "; $py 2>&1; echo; done
 #+END_SRC
 
-- Get into the build environment of a package
+- Allows us to step into the build environment of a package.
+- Use of the same Nix expressions in production and development.
 
 #+BEGIN_SRC sh
 nix-shell '<nixos>' -A pypy --pure
