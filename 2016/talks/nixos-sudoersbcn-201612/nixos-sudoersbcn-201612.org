@@ -1,0 +1,291 @@
+#+TITLE: Introduction to NixOS
+#+AUTHOR: Ignacio Torres Masdeu
+#+EMAIL: i@itorres.net
+#+LANGUAGE: en
+
+* The Nix package manager
+- Packages are built by functions that  have no side effects
+- The results are stored in =/nix/store= in a path composed by a hash and a package name
+#+BEGIN_SRC 
+/nix/store/f14wv5if337jf0l5169pyia5wdcdwrz8-fortune-mod-1.99.1
+#+END_SRC
+- The hash is computed from the declaration of the package and *all
+  it's dependencies*
+
+* Nix: package components
+- Every package in the store has a [[/nix/store/g9k1bbydr89syn0qnj420w2g35h2knx4-fortune-mod-1.99.1.drv][derivation]].
+- This derivation 
+#+BEGIN_SRC sh
+gaia:nixos-sudoersbcn-201612$ ls -ld /nix/store/*pypy*
+-r--r--r-- 1 root root 17224804 Jan  1  1970 /nix/store/bv6hzv0xrmy493rbv5ns8qg40smvic6g-release-pypy2.7-v5.4.1.tar.bz2
+-r--r--r-- 1 root root    12538 Jan  1  1970 /nix/store/gba5sz542pfv5nlambxlbp4zz2q80nh3-pypy-5.4.1.drv
+-rw------- 1 root root        0 Dec 13 12:47 /nix/store/h4mimrcmwlywpasiyhz8vg68acch5ir4-pypy-5.4.1.lock
+-r--r--r-- 1 root root     2335 Jan  1  1970 /nix/store/mr2r89kl9p48cv5msw4sa7rjqyxg96h3-release-pypy2.7-v5.4.1.tar.bz2.drv
+
+#+END_SRC
+
+
+* Nix: linking
+- Binaries are explicitly linked to libraries in the nix store
+#+BEGIN_SRC sh :results output
+ldd /nix/store/f14wv5if337jf0l5169pyia5wdcdwrz8-fortune-mod-1.99.1/bin/fortune
+#+END_SRC
+
+#+RESULTS:
+: 	linux-vdso.so.1 (0x00007ffd1d7b9000)
+: 	librecode.so.0 => /nix/store/zj4qgi30qsqvd81bbfj74kp54m7qqqpl-recode-3.7-2fd838565/lib/librecode.so.0 (0x00007f330f8f9000)
+: 	libc.so.6 => /nix/store/jm1n87rp8vr90j9ahcrfzr57nc2r8vgf-glibc-2.24/lib/libc.so.6 (0x00007f330f55b000)
+: 	/nix/store/jm1n87rp8vr90j9ahcrfzr57nc2r8vgf-glibc-2.24/lib/ld-linux-x86-64.so.2 (0x00007f330fc21000)
+- Due to this whhen using foreign (non-NixOS) binaries we need to patch their elf headers
+#+BEGIN_SRC 
+patchelf --set-interpreter /nix/store/jm1n87rp8vr90j9ahcrfzr57nc2r8vgf-glibc-2.24/lib/ld-linux-x86-64.so.2 vendetta
+#+END_SRC
+- In some cases like [[/nix/store/k60i8a7plawg6x7sl5ajyc9gp7fgadpr-firefox-50.0.2/lib/firefox-50.0.2/firefox.yvBTAf][firefox]] shims are created to set environment variables
+
+
+* Nix: channels
+ - A channel is a tag of the nixpkgs tree
+ - Huge probabilities of an existing binary build
+
+* Nix: nix-env
+   - Install and remove packages
+#+BEGIN_SRC sh :results output
+  nix-env -q | tail -2
+#+END_SRC
+
+#+RESULTS:
+: comical-0.8
+: dropbox-14.4.19
+: i7z-0.27.2
+   - Supports rollbacks and generations
+#+BEGIN_SRC sh :results output
+  nix-env --list-generations | tail -2
+#+END_SRC
+
+#+RESULTS:
+:    7   2016-12-08 04:21:45   
+:    8   2016-12-13 02:33:46   (current)
+   
+* Nix: nix-shell
+  - Get into a shell with a modified environment defined by a nix expression.
+   - Virtualenv on steroids.
+  - Can be used as a #! intepreter
+   - Dependency aware scripts!
+#+BEGIN_SRC sh :results output
+for py in shebang/*.py; do echo "# $py"; $py 2>&1; done
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+# shebang/test2-old.py
+#! /usr/bin/env nix-shell
+#! nix-shell -i python2 -p python27 python27Packages.requests2
+#! nix-shell -I nixpkgs=https://github.com/NixOS/nixpkgs-channels/archive/nixos-14.12.tar.gz
+import test
+# shebang/test2.py
+#! /usr/bin/env nix-shell
+#! nix-shell -i python2 -p python27 python27Packages.requests2
+import test
+# shebang/test3.py
+#! /usr/bin/env nix-shell
+#! nix-shell -i python3.5 -p python35 python35Packages.requests2
+import test
+# shebang/test.py
+#!/usr/bin/env python
+import sys
+import requests
+print (sys.version)
+# shebang/testpy.py
+#! /usr/bin/env nix-shell
+#! nix-shell -i pypy -p pypy pythonPackages.requests2
+import test
+#+end_example
+
+* Nix: nix-repl
+- Useful to practice the Nix language and to inspect the state of the 
+#+BEGIN_SRC 
+gaia:~ nix-repl 
+Welcome to Nix version 1.11.4. Type :? for help.
+
+nix-repl> :l <nixpkgs>
+Added 6642 variables.
+
+nix-repl> nix-tour.meta.description 
+"'the tour of nix' from nixcloud.io/tour as offline version"
+#+END_SRC
+
+* Nix: store model bonuses
+- The Nix store acts as an artifact store
+ - No more NPM mayhem
+- It can be shared among servers to be used as a binary cache
+* NixOS
+- Apply the same model to the system environment
+- Every +package+ *object* in the store has a [[/nix/store/24d443bwwd7nm68nav01d7wlm891mcgn-etc.drv][derivation]]
+- Generate immutable, reproducible system configuration
+- Many entries in =/etc= are a symlink forest to the Nix store
+#+BEGIN_SRC sh :results output
+ls -l /etc  | grep /etc/static | tail -4
+ls -l /etc/static
+ls -l /nix/store/fnib5j4z39zkklsk2dxs49qjgjrakkx8-etc/etc | tail -4
+
+#+END_SRC
+
+#+RESULTS:
+: lrwxrwxrwx 1 root root   20 Dec 13 11:20 services -> /etc/static/services
+: lrwxrwxrwx 1 root root   18 Dec 13 11:20 shells -> /etc/static/shells
+: lrwxrwxrwx 1 root root   25 Dec 13 11:20 vconsole.conf -> /etc/static/vconsole.conf
+: lrwxrwxrwx 1 root root   20 Dec 13 11:20 zoneinfo -> /etc/static/zoneinfo
+: lrwxrwxrwx 1 root root 51 Dec 13 11:20 /etc/static -> /nix/store/fnib5j4z39zkklsk2dxs49qjgjrakkx8-etc/etc
+: lrwxrwxrwx 1 root root 57 Jan  1  1970 vconsole.conf -> /nix/store/y84j6fgajjl96qp9c4jsxhxp673w5z3d-vconsole.conf
+: dr-xr-xr-x 3 root root  3 Jan  1  1970 X11
+: dr-xr-xr-x 3 root root  3 Jan  1  1970 zfs
+: lrwxrwxrwx 1 root root 71 Jan  1  1970 zoneinfo -> /nix/store/6ljsbjqp5bshbg3d7v8zb392j8qq674c-tzdata-2016f/share/zoneinfo
+
+* NixOS: Install
+
+* NixOps
+** Wash, rinse and repeat
+   [[file:nixops/sudoers.nix::{][sudoers.nix]]
+   [[file:nixops/sudoers-virtd.nix::let][sudoers-virtd.nix]]
+
+#+BEGIN_SRC sh :results output
+exec 2>&1
+nixops create -d sudoers nixops/sudoers.nix nixops/sudoers-virtd.nix 
+:
+#+END_SRC
+
+#+BEGIN_SRC sh :results output
+exec 2>&1
+nixops create -d sudoers nixops/sudoers.nix nixops/sudoers-virtd.nix 
+:
+#+END_SRC
+
+* NixOps: Modify the definition and check the generation number
+#+BEGIN_SRC sh :results output
+exec 2>&1
+nixops ssh-for-each -p ls /nix/var/nix/profiles/
+:
+#+END_SRC
+
+* NixOps:  It's derivations all the way down
+#+BEGIN_SRC sh :results output
+ls -l /nix/store/2fw3m6x14jhzkzx7psrbn67k4xhq0wyi-nixops-machines/* /nix/store/2fw3m6x14jhzkzx7psrbn67k4xhq0wyi-nixops-machines/elasticsearch/ /nix/store/vmn60r417i482018yhrj7hzklqwgnyls-etc/etc
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+lrwxrwxrwx  1 root root 89 Jan  1  1970 /nix/store/2fw3m6x14jhzkzx7psrbn67k4xhq0wyi-nixops-machines/elasticsearch -> /nix/store/h93fq675fz50qbijsfxywdfwp2pwxfmk-nixos-system-elasticsearch-16.09.1199.df38db3
+lrwxrwxrwx  1 root root 82 Jan  1  1970 /nix/store/2fw3m6x14jhzkzx7psrbn67k4xhq0wyi-nixops-machines/kibana -> /nix/store/5zgshkvj9pwq7g396sqivcbls08pw9l9-nixos-system-kibana-16.09.1199.df38db3
+lrwxrwxrwx  1 root root 85 Jan  1  1970 /nix/store/2fw3m6x14jhzkzx7psrbn67k4xhq0wyi-nixops-machines/webserver -> /nix/store/x5z9ki8b30mffis5nsm42s7sg5n74x0d-nixos-system-webserver-16.09.1199.df38db3
+
+/nix/store/2fw3m6x14jhzkzx7psrbn67k4xhq0wyi-nixops-machines/elasticsearch/:
+total 31
+-r-xr-xr-x 1 root root 15111 Jan  1  1970 activate
+dr-xr-xr-x 2 root root     3 Jan  1  1970 bin
+-r--r--r-- 1 root root     0 Jan  1  1970 configuration-name
+lrwxrwxrwx 1 root root    51 Jan  1  1970 etc -> /nix/store/vmn60r417i482018yhrj7hzklqwgnyls-etc/etc
+-r--r--r-- 1 root root     0 Jan  1  1970 extra-dependencies
+dr-xr-xr-x 2 root root     2 Jan  1  1970 fine-tune
+lrwxrwxrwx 1 root root    65 Jan  1  1970 firmware -> /nix/store/jlxjj9fzc627v3lv9ksmsjqx0386w5lj-firmware/lib/firmware
+-r-xr-xr-x 1 root root  5458 Jan  1  1970 init
+-r--r--r-- 1 root root     9 Jan  1  1970 init-interface-version
+lrwxrwxrwx 1 root root    57 Jan  1  1970 initrd -> /nix/store/hv1clwvz3fivk8c12nisb3sv44i4xqhg-initrd/initrd
+lrwxrwxrwx 1 root root    64 Jan  1  1970 kernel -> /nix/store/lyjfldpd083vz47hcwzlmg0m9hrmj6nz-linux-4.4.36/bzImage
+lrwxrwxrwx 1 root root    58 Jan  1  1970 kernel-modules -> /nix/store/jj2pb8v4is0caxqqzxyr7l7fc61nsxqc-kernel-modules
+-r--r--r-- 1 root root    10 Jan  1  1970 kernel-params
+-r--r--r-- 1 root root    18 Jan  1  1970 nixos-version
+lrwxrwxrwx 1 root root    55 Jan  1  1970 sw -> /nix/store/5f10snpbq3h3wvfdyswhc9vng3jrrs5d-system-path
+-r--r--r-- 1 root root    12 Jan  1  1970 system
+lrwxrwxrwx 1 root root    55 Jan  1  1970 systemd -> /nix/store/27yfjs1hn3d758n37fb75084j7vmz92g-systemd-231
+
+/nix/store/vmn60r417i482018yhrj7hzklqwgnyls-etc/etc:
+total 34
+lrwxrwxrwx 1 root root 54 Jan  1  1970 bashrc -> /nix/store/lp1mwk3ymykm1f01012fgq0jr2dhqv6l-etc-bashrc
+lrwxrwxrwx 1 root root 53 Jan  1  1970 dbus-1 -> /nix/store/g6635dbh3jlffaf6wy24z6y4f883vg91-dbus-conf
+dr-xr-xr-x 2 root root  3 Jan  1  1970 default
+lrwxrwxrwx 1 root root 60 Jan  1  1970 dhcpcd.exit-hook -> /nix/store/wxh4b4v36rpj1isv0il34aq4fq4havja-dhcpcd.exit-hook
+lrwxrwxrwx 1 root root 69 Jan  1  1970 fonts -> /nix/store/7xkj909nnzkl0896rsgfqpbx4lavkhjl-fontconfig-etc/etc/fonts/
+lrwxrwxrwx 1 root root 53 Jan  1  1970 fstab -> /nix/store/y1ckmjznrp24b10vh1bsfkhadsc4716f-etc-fstab
+lrwxrwxrwx 1 root root 53 Jan  1  1970 hosts -> /nix/store/hisnsw2iqf3h826zqxlf254v7v5v311c-etc-hosts
+lrwxrwxrwx 1 root root 51 Jan  1  1970 inputrc -> /nix/store/dwv0wf3szv3ipgyyyrf1zxh4iqlckiip-inputrc
+lrwxrwxrwx 1 root root 49 Jan  1  1970 issue -> /nix/store/m6pbqclmw91zxd12ji811w2z0cz0ypam-issue
+lrwxrwxrwx 1 root root 57 Jan  1  1970 kbd -> /nix/store/yhaiask1bmry0q4rrzrwi5bkp7nk9kpy-kbd-env/share
+lrwxrwxrwx 1 root root 55 Jan  1  1970 locale.conf -> /nix/store/1ajg41z5w2ns7r768bsj3n1rh5f5nz6l-locale.conf
+lrwxrwxrwx 1 root root 17 Jan  1  1970 localtime -> /etc/zoneinfo/UTC
+-r--r--r-- 1 root root  2 Jan  1  1970 localtime.gid
+-r--r--r-- 1 root root 15 Jan  1  1970 localtime.mode
+-r--r--r-- 1 root root  2 Jan  1  1970 localtime.uid
+lrwxrwxrwx 1 root root 54 Jan  1  1970 login.defs -> /nix/store/7b9m7fxj6yrzsgqg2hc6abkfiydc18x4-login.defs
+dr-xr-xr-x 2 root root  5 Jan  1  1970 modprobe.d
+dr-xr-xr-x 2 root root  3 Jan  1  1970 modules-load.d
+dr-xr-xr-x 2 root root  3 Jan  1  1970 nix
+lrwxrwxrwx 1 root root 61 Jan  1  1970 nsswitch.conf -> /nix/store/v4a1qnzs0s84vv3fv41icxfy9f3kp8z1-etc-nsswitch.conf
+lrwxrwxrwx 1 root root 58 Jan  1  1970 os-release -> /nix/store/d3wjcy47h0i8jkbhk58rind0ppz5p5pr-etc-os-release
+dr-xr-xr-x 2 root root 30 Jan  1  1970 pam.d
+dr-xr-xr-x 3 root root  3 Jan  1  1970 pki
+dr-xr-xr-x 3 root root  3 Jan  1  1970 polkit-1
+lrwxrwxrwx 1 root root 55 Jan  1  1970 profile -> /nix/store/il6v58drjsspg4vpcls01qwn7110d2y2-etc-profile
+lrwxrwxrwx 1 root root 71 Jan  1  1970 protocols -> /nix/store/mir12n273bn2x124x5zq2anqq03zjyiz-iana-etc-2.30/etc/protocols
+dr-xr-xr-x 2 root root  3 Jan  1  1970 pulse
+lrwxrwxrwx 1 root root 63 Jan  1  1970 resolvconf.conf -> /nix/store/m4fav79yij0hq9dhpgh8kndx9ql5vlic-etc-resolvconf.conf
+lrwxrwxrwx 1 root root 62 Jan  1  1970 rpc -> /nix/store/jm1n87rp8vr90j9ahcrfzr57nc2r8vgf-glibc-2.24/etc/rpc
+dr-xr-xr-x 2 root root  3 Jan  1  1970 samba
+lrwxrwxrwx 1 root root 70 Jan  1  1970 services -> /nix/store/mir12n273bn2x124x5zq2anqq03zjyiz-iana-etc-2.30/etc/services
+lrwxrwxrwx 1 root root 54 Jan  1  1970 shells -> /nix/store/zsp7gbfq9v1i9ncxq7zzmxm9jrdr5mwj-etc-shells
+dr-xr-xr-x 2 root root  5 Jan  1  1970 ssh
+dr-xr-xr-x 3 root root  3 Jan  1  1970 ssl
+lrwxrwxrwx 1 root root 54 Jan  1  1970 subgid -> /nix/store/3h0dwljaszkagj4rqnygpgfqgl9yccqk-etc-subgid
+-r--r--r-- 1 root root  2 Jan  1  1970 subgid.gid
+-r--r--r-- 1 root root  5 Jan  1  1970 subgid.mode
+-r--r--r-- 1 root root  2 Jan  1  1970 subgid.uid
+lrwxrwxrwx 1 root root 54 Jan  1  1970 subuid -> /nix/store/j9gg7nbmcvxpf8fjrpk81nbigzdap3fm-etc-subuid
+-r--r--r-- 1 root root  2 Jan  1  1970 subuid.gid
+-r--r--r-- 1 root root  5 Jan  1  1970 subuid.mode
+-r--r--r-- 1 root root  2 Jan  1  1970 subuid.uid
+lrwxrwxrwx 1 root root 51 Jan  1  1970 sudoers -> /nix/store/zkrh64xxwp2hl1lhj5l9i0cawwyc6l6i-sudoers
+-r--r--r-- 1 root root  2 Jan  1  1970 sudoers.gid
+-r--r--r-- 1 root root  5 Jan  1  1970 sudoers.mode
+-r--r--r-- 1 root root  2 Jan  1  1970 sudoers.uid
+dr-xr-xr-x 2 root root  3 Jan  1  1970 sysctl.d
+dr-xr-xr-x 2 root root  9 Jan  1  1970 systemd
+dr-xr-xr-x 2 root root  5 Jan  1  1970 tmpfiles.d
+dr-xr-xr-x 2 root root  4 Jan  1  1970 udev
+lrwxrwxrwx 1 root root 57 Jan  1  1970 vconsole.conf -> /nix/store/y84j6fgajjl96qp9c4jsxhxp673w5z3d-vconsole.conf
+lrwxrwxrwx 1 root root 71 Jan  1  1970 zoneinfo -> /nix/store/6ljsbjqp5bshbg3d7v8zb392j8qq674c-tzdata-2016f/share/zoneinfo
+#+end_example
+
+
+* NixOps: supported platforms
+- Cloud
+  - Amazon EC2
+  - Microsoft Azure
+  - Google Cloud Engine
+  - Hetzner
+  - Digital Ocean (pending merge)
+
+- Local
+  - libvirtd
+  - Virtualbox
+
+- Existing NixOS machine
+
+* There's much more
+- Hydra
+  Continuous build system
+- Disnix
+  A data aware toolset to deploy  service oriented systems
+
+
+* References and resources
+- Eelco Dolstra’s publications
+  http://nixos.org/~eelco/pubs/
+- Nix and NixOS Documentation
+  http://nixos.org/nix/manual/
+  http://nixos.org/nixos/manual/
+  http://nixos.org/nixops/manual/
+- Luca Bruno's Nix Pills
+  http://lethalman.blogspot.com.es/search/label/nixpills
+- NixOS Community
+  http://nixos.org/nixos/community.html
+  http://planet.nixos.org/
+  https://www.reddit.com/r/NixOS/
