@@ -141,7 +141,25 @@ ls -l /nix/store/fnib5j4z39zkklsk2dxs49qjgjrakkx8-etc/etc | tail -4
 : dr-xr-xr-x 3 root root  3 Jan  1  1970 zfs
 : lrwxrwxrwx 1 root root 71 Jan  1  1970 zoneinfo -> /nix/store/6ljsbjqp5bshbg3d7v8zb392j8qq674c-tzdata-2016f/share/zoneinfo
 
-* NixOS: Install
+* NixOS: install process
+- Spartan, simple and effective CLI install
+- Gnome style
+  1. Partition your system and mount the filesystems in =/mnt= with
+     the expected structure
+  2. Generate a base configuration from that layout
+  3. Tune your configuration to your needs
+  4. ???
+  5. Profit
+
+#+BEGIN_SRC
+0# nix-env -i emacs && export EDITOR=emacs
+1# mount /dev/sda2 /mnt && mkdir /mnt/boot && mount /dev/sda1 /mnt/boot \
+   && mkswap /dev/sda3 && swapon /dev/sda3
+2# nixos-generate-config --root /mnt
+3# $EDITOR /mnt/etc/nixos/
+4# nixos-install
+5# reboot
+#+END_SRC
 
 * NixOps
 ** Wash, rinse and repeat
