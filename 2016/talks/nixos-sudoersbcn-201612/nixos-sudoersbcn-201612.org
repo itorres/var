@@ -32,22 +32,6 @@ gaia:nixos-sudoersbcn-201612$ ls -1d /nix/store/*pypy*
 /nix/store/mr2r89kl9p48cv5msw4sa7rjqyxg96h3-release-pypy2.7-v5.4.1.tar.bz2.drv
 #+END_EXAMPLE
 
-* Nix: environments and profiles
-- Every user has a =~/.nix-profile= symlink to
-  =/nix/var/nix/profiles/per-user/username/profile=.
-- That path is a symlink to the *_current_* user profile.
-- And the current user profile is a symlink to a userenvironment in
-  the store:
-
-#+BEGIN_EXAMPLE
-gaia:~$ readlink ~/.nix-profile
-/nix/var/nix/profiles/per-user/itorres/profile
-gaia:~$ readlink /nix/var/nix/profiles/per-user/itorres/profile
-profile-8-link
-gaia:~$ readlink /nix/var/nix/profiles/per-user/itorres/profile-8-link
-/nix/store/c2dly9lm8shh8rhb7yz3ibrg3yxsn06n-user-environment
-#+END_EXAMPLE
-
 * Nix: binary linking
 - Binaries are explicitly linked to libraries in the Nix store.
 
@@ -84,7 +68,24 @@ exec /nix/store/xm06p32nvmsda4ddy9whsfb7dp6wgpzv-firefox-unwrapped-50.0.2/bin/fi
 - The =nixos-*= and =nixpkgs-*= channels are build by Hydra, the
   continuous delivery daemon of the project.
   - Huge probabilities of an existing binary build.
-- Allows us to freeze our system in a point in time.
+- Allows us to freeze our system in a point in time and to install
+  packages from different sources.
+
+* Nix: environments and profiles
+- Every user has a =~/.nix-profile= symlink to
+  =/nix/var/nix/profiles/per-user/username/profile=.
+- That path is a symlink to the *_current_* user profile.
+- And the current user profile is a symlink to a userenvironment in
+  the store.
+
+#+BEGIN_EXAMPLE
+gaia:~$ readlink ~/.nix-profile
+/nix/var/nix/profiles/per-user/itorres/profile
+gaia:~$ readlink /nix/var/nix/profiles/per-user/itorres/profile
+profile-8-link
+gaia:~$ readlink /nix/var/nix/profiles/per-user/itorres/profile-8-link
+/nix/store/c2dly9lm8shh8rhb7yz3ibrg3yxsn06n-user-environment
+#+END_EXAMPLE
 
 * Nix: nix-env(1)
 - Manage the environment
@@ -202,23 +203,9 @@ ls -l /nix/store/fnib5j4z39zkklsk2dxs49qjgjrakkx8-etc/etc | tail -4
 - Services are configured by modifying their properties.
 - Use ~nixos-option(8)~ to check available options.
   Web version available on https://nixos.org/nixos/options.html
-
-#+BEGIN_EXAMPLE
-networking.hostName = "gaia";
-networking.hostId = "aa0ab1ce"; # Needed for ZFS
-networking.networkmanager.enable = true;
-  environment.systemPackages = with pkgs; [
-    binutils
-    file
-  ];
-  users.extraUsers.itorres = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" "networkmanager" "libvirtd" "docker" ];
-    description = "Ignacio Torres Masdeu";
-    uid = 1001;
-    hashedPassword = "$6$sCWWAYVlN$aNptMu78NRsIwuJTw8pNkXOrsHdxz3TdFjzWJ1L9RSmsAJaIUK52LYyMSG/vJhLSP0Z6lgSQ64NzRbhCs6pYd0";
-  };
-#+END_EXAMPLE
+- Apply changes with ~nixos-rebuild switch~.
+  - Test only on next reboot with ~nixos-rebuild test~.
+  - Rollback with  ~nixos-rebuild switch --rollback~.
 
 * NixOps
 - Define, deploy and orchestrate a network of NixOS hosts.
@@ -228,13 +215,9 @@ networking.networkmanager.enable = true;
    [[file:nixops/sudoers-virtd.nix::let][sudoers-virtd.nix]]
 
 #+BEGIN_SRC sh :results output
-exec 2>&1
 nixops create -d sudoers nixops/sudoers.nix nixops/sudoers-virtd.nix 
-nixops deploy -d sudoers -j 1
-:
-#+END_SRC
+for i in elasticsearch kibana webserver; do nixops deploy -d sudoers --include $i; done
 
-#+BEGIN_SRC sh
 xdg-open http://$(nixops ssh webserver ifconfig | awk '/192.168.122/ {print $2}')/
 xdg-open http://$(nixops ssh kibana ifconfig | awk '/192.168.122/ {print $2}'):5601/
 #+END_SRC
@@ -242,13 +225,14 @@ xdg-open http://$(nixops ssh kibana ifconfig | awk '/192.168.122/ {print $2}'):5
 * NixOps: Modify the definition and check the generation number
 [[file:nixops/sudoers.nix::<h1>Hello%20world!</h1][sudoers.nix:index.html]]
 #+BEGIN_SRC sh :results output
-exec 2>&1
 nixops list-generations -d sudoers
 nixops ssh-for-each -p ls /nix/var/nix/profiles/
+
+sed -ie 's#Hello world#Hola Sudoers#' nixops/sudoers.nix
 nixopos deploy -d sudoers
-nixops ssh-for-each -p ls /nix/var/nix/profiles/
+
 nixops list-generations -d sudoers
-:
+nixops ssh-for-each -p ls /nix/var/nix/profiles/
 #+END_SRC
 
 * NixOps:  It's derivations all the way down
