@@ -43,7 +43,7 @@ gaia:~$ ldd /nix/store/f14wv5if337jf0l5169pyia5wdcdwrz8-fortune-mod-1.99.1/bin/f
 	/nix/store/jm1n87rp8vr90j9ahcrfzr57nc2r8vgf-glibc-2.24/lib/ld-linux-x86-64.so.2 (0x00007f8526b13000)
 #+END_EXAMPLE
 
-- Due to this when using foreign (non-NixOS) binaries we need patch
+- Due to this when using foreign (non-NixOS) binaries we must patch
   their ELF headers.
 
 #+BEGIN_EXAMPLE
@@ -155,7 +155,7 @@ nix-repl> config.users.users.itorres.home
 "/home/itorres"
 #+END_EXAMPLE
 
-* Nix: store
+* Nix: store recap
 ** Bonus
 - The Nix store acts as an artifact store.
  - No more NPM mayhem.
@@ -174,11 +174,17 @@ nix-repl> config.users.users.itorres.home
 - Generate immutable, declarative, reproducible system configurations.
 - Many entries in =/etc= are a symlink to the Nix store.
 
-#+BEGIN_SRC sh :results output
-ls -l /etc  | grep /etc/static | tail -4
-ls -l /etc/static
-ls -l /nix/store/fnib5j4z39zkklsk2dxs49qjgjrakkx8-etc/etc | tail -4
-#+END_SRC
+#+BEGIN_EXAMPLE
+lrwxrwxrwx 1 root root   20 Dec 13 18:02 services -> /etc/static/services
+lrwxrwxrwx 1 root root   18 Dec 13 18:02 shells -> /etc/static/shells
+lrwxrwxrwx 1 root root   25 Dec 13 18:02 vconsole.conf -> /etc/static/vconsole.conf
+lrwxrwxrwx 1 root root   20 Dec 13 18:02 zoneinfo -> /etc/static/zoneinfo
+lrwxrwxrwx 1 root root 51 Dec 13 18:02 /etc/static -> /nix/store/fnib5j4z39zkklsk2dxs49qjgjrakkx8-etc/etc
+lrwxrwxrwx 1 root root 57 Jan  1  1970 vconsole.conf -> /nix/store/y84j6fgajjl96qp9c4jsxhxp673w5z3d-vconsole.conf
+dr-xr-xr-x 3 root root  3 Jan  1  1970 X11
+dr-xr-xr-x 3 root root  3 Jan  1  1970 zfs
+lrwxrwxrwx 1 root root 71 Jan  1  1970 zoneinfo -> /nix/store/6ljsbjqp5bshbg3d7v8zb392j8qq674c-tzdata-2016f/share/zoneinfo
+#+END_EXAMPLE
 
 * NixOS: install process
 - Simple but effective CLI install.
