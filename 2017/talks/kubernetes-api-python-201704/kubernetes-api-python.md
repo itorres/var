@@ -288,9 +288,9 @@ Need to support different environments
 
 We're already deploying in GCE
 ```
-gaia:~$ kubectl --context cloud get service --all-namespaces -o name | grep -v kube-system | wc -l
+gaia:~$ kubectl --context cloud get service --all-namespaces -o name | wc -l
 92
-gaia:~$ kubectl --context cloud get pod --all-namespaces -o name | grep -v kube-system | wc -l
+gaia:~$ kubectl --context cloud get pod --all-namespaces -o name | wc -l
 301
 ```
 
