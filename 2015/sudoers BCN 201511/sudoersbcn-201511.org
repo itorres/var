@@ -1,0 +1,246 @@
+#+TITLE: Emacs in 2015: an option worth considering
+#+AUTHOR: Ignacio Torres Masdeu
+#+EMAIL: i@itorres.net
+#+LANGUAGE: en
+  
+* org-mode
+
+     Org-mode looks like a simple outliner but has a few tricks on its hat.
+
+     For an instance, you can record code blocks and run them through [[file:~/src/itorres/dotfiles/.emacs.d/init.d/planner.el::(org-babel-do-load-languages][babel]].
+
+     Be it Python
+
+     #+BEGIN_SRC python :results output replace
+       #!/usr/bin/python
+       # -*- coding: utf-8 -*-
+       from base64 import encodestring, decodestring
+       def helloEmacs(sudoers):
+           if sudoers:
+               return decodestring("U8OpIHF1ZSBlc3TDoWlzIHBlbnNhbmRvIGVuIGlyIGFsIEZyYW5rZnVydCBkZSB1bmEgdmV6Lg==")
+
+           return "Hello Emacs World."
+       print helloEmacs(sudoers=True)
+     #+END_SRC
+
+     #+RESULTS:
+     : Sé que estáis pensando en ir al Frankfurt de una vez.
+
+     Or a shell command
+     
+     #+BEGIN_SRC sh
+     emacs -q
+     #+END_SRC
+
+     And yes, that underlined word was a link to a file. Not only to a file, but to a concrete position in that file.
+
+     Neat, isn't it? Defining a simple keybinding you can type C-c l wherever you're in an Emacs session and often you will be able to store a link to the position of the cursor in that buffer.
+
+#+BEGIN_SRC emacs-lisp
+  (define-key global-map "\C-cl" 'org-store-link)
+
+#+END_SRC
+
+     Other example of org-babel plugins. There's a pile of exapmles in this page:
+     http://home.fnal.gov/~neilsen/notebook/orgExamples/org-examples.html#sec-6-2
+
+     #+BEGIN_SRC plantuml :file uml.png
+skinparam monochrome true
+ Client ->  API:    sync  (Payload + Callback)
+ API    ->> Worker: async (Payload)
+ Client <-  API:    sync  (HTTP 200)
+ Client <<- Worker: async (Callback)
+     #+END_SRC
+
+     #+RESULTS:
+     [[file:uml.png]]
+
+#+BEGIN_SRC ditaa :file ditaa.png
+
++-------------+
+|             |
+| Foo         |
+|             |
++----+--------+
+|Bar |Baz     |
+|    |        |
++----+--------+
+
++------+   +-----+   +-----+   +-----+
+|{io}  |   |{d}  |   |{s}  |   |cBLU |
+| Foo  +---+ Bar +---+ Baz +---+ Moo |
+|      |   |     |   |     |   |     |
++------+   +-----+   +--+--+   +-----+
+                        |
+           /-----\      |      +------+
+           |     |      |      | c1AB |
+           | Goo +------+---=--+ Shoo |
+           \-----/             |      |
+                               +------+
+
+#+END_SRC
+
+#+RESULTS:
+[[file:ditaa.png]]
+
+#+HEADERS: :classname HelloWorld :cmdline "-cp ."
+#+begin_src java  :results output :exports both
+  public class HelloWorld {
+      public static void main(String[] args) {
+          System.out.println("Hello, sudoers");
+      }
+  }
+#+end_src
+
+#+RESULTS:
+: Hello, sudoers
+
+#+BEGIN_SRC C :includes '(<stdio.h>)
+  int i=1; i=i++;
+  printf("Result: %d", i);
+#+END_SRC
+
+#+RESULTS:
+: Result: 1
+
+#+BEGIN_SRC http
+POST http://httpbin.org/post
+
+name=Ignacio&surname=Torres
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+HTTP/1.1 200 OK
+Server: nginx
+Date: Tue, 03 Nov 2015 19:03:37 GMT
+Content-Type: application/json
+Content-Length: 387
+Connection: keep-alive
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+
+{
+  "args": {}, 
+  "data": "", 
+  "files": {}, 
+  "form": {
+    "name": "Ignacio", 
+    "surname": "Torres"
+  }, 
+  "headers": {
+    "Accept": "*/*", 
+    "Content-Length": "27", 
+    "Content-Type": "application/x-www-form-urlencoded", 
+    "Host": "httpbin.org", 
+    "User-Agent": "curl/7.43.0"
+  }, 
+  "json": null, 
+  "origin": "147.83.182.7", 
+  "url": "http://httpbin.org/post"
+}
+#+end_example
+
+#+BEGIN_SRC http :select .form
+POST http://httpbin.org/post
+
+name=Ignacio&surname=Torres
+#+END_SRC
+
+#+RESULTS:
+: {
+:   "name": "Ignacio",
+:   "surname": "Torres"
+: }
+
+* Intermission: motivation to check emacs for the nth time
+
+     One of the reasons I grew curious about Emacs again in the last years was due to [[docview:~/Documents/Coders%20at%20Work_%20Reflections%20on%20the%20Craft%20of%20Programming%20-%20Peter%20Seibel.pdf::101][Brad Fitzpatrick's mention on Coders at Work]].
+
+     Meanwhile I liked the notion of the integrating editor [[http://research.swtch.com/acme][propounded]] by [[https://en.wikipedia.org/wiki/Acme_(text_editor)][Acme]]. In late 2014 I tried Acme for the nth time both in [[https://en.wikipedia.org/wiki/Plan_9_from_Bell_Labs][Plan9]] through [[https://swtch.com/drawterm/][drawterm]], in [[https://swtch.com/plan9port/][Plan 9 from User Space]] and in the [[https://en.wikipedia.org/wiki/Inferno_%2528operating_system%2529][Inferno]] based [[https://code.google.com/p/acme-sac/][Acme: Stand Alone Complex]]. Yes, I'm also a Plan9 fan.
+
+     Another reason was by osmosis in one of my last gigs where the CTO was an avid Emacs user.
+
+     Also, the classical joke saying that Emacs would be a nice OS if it had a half-decent text editor is now applicable to Eclipse. Emacs is lightweight by today's standards.
+
+     There are other reasons like wanting my base tools to be Open Source and that learning Lisp is more compelling than learning the vim macro language.
+     
+* tramp
+  [[file:~/.ssh/config::Host%20venera13][.ssh/config]]
+  [[file:/ssh:venera13:/opt/vmdefs/sudoers.json::"ip":%20"10.228.44.74",][venera13:/opt/vmdefs/sudoers.json]]
+  [[file:/sudo:root@hq.xin.cat:/etc/hosts::::1%20localhost][ssh|sudo]]
+  [[file:/ssh:sudoers:/etc][sudoers:/etc]]
+
+#+BEGIN_SRC sh :results output :exports both
+id
+pwd
+hostname
+#+END_SRC
+
+#+RESULTS:
+: uid=1000(itorres) gid=1000(itorres) groups=1000(itorres),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),113(lpadmin),128(sambashare),132(vboxusers),999(docker)
+: /home/itorres/org
+: dawn
+
+#+BEGIN_SRC sh :results output :exports both :dir /tmp
+id
+pwd
+hostname
+#+END_SRC
+
+#+RESULTS:
+: uid=1000(itorres) gid=1000(itorres) groups=1000(itorres),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),113(lpadmin),128(sambashare),132(vboxusers),999(docker)
+: /tmp
+: dawn
+
+#+BEGIN_SRC sh :results output :exports both :dir :dir /ssh:hq.xin.cat:/home/itorres
+id
+pwd
+hostname
+#+END_SRC
+
+#+RESULTS:
+: uid=1000(itorres) gid=100(users) groups=100(users),1000(itorres)
+: /home/itorres
+: home.xin.cat
+
+#+BEGIN_SRC sh :results output :exports both :dir :dir /ssh:sudoers:/etc
+id
+pwd
+hostname
+#+END_SRC
+
+#+RESULTS:
+: uid=0(root) gid=0(root) groups=0(root),1(other),2(bin),3(sys),4(adm),5(uucp),6(mail),7(tty),9(nuucp),12(daemon)
+: /etc
+: sudoers
+
+* shells
+** shell
+   rename-uniquely
+   rename-buffer
+** eshell
+* vc
+** magit
+   [[file:~/src/guifibages/api/Dockerfile::FROM%20guifibages/python][guifibages/api]]
+** git-link
+   [[file:~/src/itorres/dotfiles/.emacs.d/init.el::(use-package%20git-link][git-link in init.el]]
+
+* projectile
+  Project management done right thanks to helm-projectile
+  https://github.com/bbatsov/projectile
+
+** Example: ansible
+   [[file:~/src/ansible/roles/ubuntu_desktop/tasks/main.yml::---][~/src/ansible/roles/ubuntu_desktop/tasks/main.yml]]
+
+** Example: .emacs
+   [[file:~/src/itorres/dotfiles/.emacs.d/init.el::(use-package%20window-numbering][~/.emacs.d/init.el]]
+   
+* use-package
+  Ansible for Emacs
+  Package management and configuration
+  Lazy loading improves Emacs launch time
+  https://github.com/jwiegley/use-package
+* docker
+  docker-ps
+  docker-images
