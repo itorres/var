@@ -1,11 +1,20 @@
 import json
+
 from datetime import timedelta
+from os import getenv
 
 from flask import Flask, make_response, redirect, request, send_from_directory
 from kubernetes import client
 
 
-client.configuration.host = 'http://localhost:8080'
+kubernetes_host = getenv('KUBERNETES_PORT_443_TCP')
+
+if kubernetes_host is None:
+    client.configuration.host = 'http://localhost:8080'
+else:
+    client.configuration.host = kubernetes_host.replace('tcp://', 'https://')
+
+client.configuration.verify_ssl = False
 supper_options = dict(
     pizza='https://www.yelp.com/map/al-taglio-bcn-barcelona-4',
     frankfurt='https://www.yelp.com/map/frankfurts-barcelona-2'
