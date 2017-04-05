@@ -56,8 +56,10 @@ by Google in mid-2014. ([Source: Wikipedia][])
    'friendlier' Borg.
 
    Using trade marks in software projects is a _bad idea™_, just ask
-   @bcantryl2about Sun's Project _Kevlar™_.
+   [Bryan Cantrill][] about Sun's [Project _Kevlar™_][kevlar].
 
+   [Bryan Cantrill]: https://github.com/bcantrill
+   [kevlar]: https://youtu.be/-zRN7XLCRhc?t=13m29s
 
    The seven spokes on the wheel of the Kubernetes logo is a small
    acknowledgment of Kubernetes' original name.
