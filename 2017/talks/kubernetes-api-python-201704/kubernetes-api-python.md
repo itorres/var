@@ -80,7 +80,9 @@ More than a _container orchestrator_.
 - Storage orchestration
   - Provision and management of volumes
   - Storage abstraction
+
 ---
+
 # How Kubernetes provides it
 
 Modular, every component is pluggable.
@@ -132,10 +134,13 @@ Because you're using [NixOS](https://nixos.org/), right?
 
 --
 count:false
+
 If not, [minikube][] will probably rock your boat.
 
 [minikube]: https://github.com/kubernetes/minikube
+
 ---
+
 # Setup: Local registry
 We need a place to push our local images to.
 
@@ -152,11 +157,11 @@ be accessed through TLS except for `localhost` so we set up:
 
 --
 count:false
-Obviously. 
---
-[I think that's pretty obvious][wat].
+
+Obviously. [I think that's pretty obvious][wat].
 
 [wat]: https://www.destroyallsoftware.com/talks/wat
+
 --
 
 Anyway now we are able to build push to our registry our images:
@@ -167,6 +172,7 @@ docker build -t 127.0.0.1:5000/itorres/k8s-abuse:latest .
 ```
 
 ---
+
 # The kubernetes API
 
 Kubernetes objects are representations of our system.
@@ -179,10 +185,12 @@ Kubernetes objects are representations of our system.
 our system.
 
 ---
+
 # The kubernetes API
 
 --
 count:false
+
 Guess what. 
 --
 count:false
@@ -211,6 +219,7 @@ spec:
 You are already using it.
 
 ---
+
 # The kubernetes API
 
 Several interfaces
@@ -222,13 +231,16 @@ Several interfaces
 In the end all of them use the REST API.
 
 ---
+
 # `kubectl`: love it
 ```sh
 $ kubectl --context local get service nginx
 NAME      CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
 nginx     10.10.10.131   <nodes>       80/TCP    42s
 ```
+
 ---
+
 # `kubectl`: or hate it
 ```sh
 $ kubectl --context local describe service nginx
@@ -244,9 +256,11 @@ NodePort:		<unset>	30220/TCP
 Endpoints:		10.10.0.3:80
 Session Affinity:	None
 ```
-Use jsonpath ASAP
+
+Use jsonpath ASAP.
 
 ---
+
 # `kubectl` with `-o jsonpath`
 
 Interactively explore the objects with [jid][]. Check this [gist][]
@@ -271,6 +285,7 @@ nginx 30220
 ```
 --
 count:false
+
 Better, but still far from perfect
 - jsonpath is only available on `get` operations.
 - But there is a lot of info only available through the `kubectl
@@ -279,6 +294,7 @@ Better, but still far from perfect
   much.
   
 ---
+
 # Our use case
 
 Need to support different environments
@@ -297,6 +313,7 @@ gaia:~$ kubectl --context cloud get pod --all-namespaces -o name | wc -l
 And that grows every week.
 
 ---
+
 class: center, middle
 # Demo Time
 
