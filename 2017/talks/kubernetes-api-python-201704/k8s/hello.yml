@@ -1,0 +1,45 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: hello
+  labels:
+    app: hello
+    version: v0
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: hello
+        version: v0
+    spec:
+      containers:
+      - name: hello
+        image: 127.0.0.1:5000/itorres/k8s-abuse
+        resources:
+          limits:
+            cpu: 100m
+            memory: 100Mi
+        env:
+        - name: SUPPER
+          value: "PIZZA"
+        ports:
+        - containerPort: 9080
+          name: hello
+          protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello
+  labels:
+    app: hello
+spec:
+  selector:
+    app: hello
+  ports:
+  - name: hello
+    port: 9080
+    protocol: TCP
+    nodePort: 30080
+  type: NodePort
