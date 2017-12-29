@@ -86,7 +86,7 @@ func main() {
 	// https://stackoverflow.com/a/23634278/267777
 	res := &Response{}
 	err = xml.Unmarshal(b, res)
-	fmt.Println(res.XMLOut, err)
+	//	fmt.Println(res.XMLOut, err)
 
 	// https://stackoverflow.com/a/34712322/267777
 	res2 := &ConsultaXMLout{}
